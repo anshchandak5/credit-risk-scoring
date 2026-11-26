@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import re
+import sqlite3
 import joblib
+import shap
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -129,9 +132,31 @@ def load_evaluation():
         raise FileNotFoundError(f"Evaluation file not found: {path}")
     return joblib.load(path)
 
+@st.cache_data
+def load_customer_data():
+    db_path = project_path("database/credit_risk.db")
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database not found: {db_path}")
+
+    with sqlite3.connect(db_path) as connection:
+        original = pd.read_sql_query(
+            "SELECT * FROM credit_customers", connection
+        )
+        engineered = pd.read_sql_query(
+            """
+            SELECT ID, avg_utilization, delayed_months,
+                   repayment_ratio, bill_growth
+            FROM customer_risk_features
+            """,
+            connection
+        )
+
+    return original.merge(engineered, on="ID", how="inner")
+
 try:
     models = load_models()
     evaluation = load_evaluation()
+    df = load_customer_data()
 
     results = evaluation["results"]
     best_model_name = evaluation.get("best_model", "XGBoost")
@@ -141,9 +166,21 @@ except Exception as exc:
     st.error(f"Unable to load the project files: {exc}")
     st.info(
         "Make sure app.py is in the project folder and that the "
-        "models and reports folders are alongside it."
+        "models, reports and database folders are alongside it."
     )
     st.stop()
+
+required_columns = feature_columns + [
+    "ID", "default payment next month", "AGE", "LIMIT_BAL",
+    "BILL_AMT1", "PAY_AMT1", "PAY_0", "delayed_months",
+    "avg_utilization", "repayment_ratio", "bill_growth"
+]
+missing_columns = [col for col in required_columns if col not in df.columns]
+if missing_columns:
+    st.error(f"Required database columns are missing: {missing_columns}")
+    st.stop()
+
+df = df.replace([np.inf, -np.inf], np.nan)
 
 # ============================================================
 # 5. HELPER FUNCTIONS
@@ -426,17 +463,14 @@ elif st.session_state.page == "customer":
             if name == best_model_name else name
         )
 
-    st.info(
-        "This public demo accepts information you enter directly. "
-        "No customer records or source dataset are included."
+    existing_tab, new_tab = st.tabs(
+        ["Existing Customer", "Test New Customer"]
     )
-
-    new_tab = st.tabs(["Test New Customer"])[0]
 
     # ========================================================
     # TAB 1 — EXISTING CUSTOMER
     # ========================================================
-    if False:
+    with existing_tab:
         st.subheader("1. Select a prediction model")
 
         model_order = ["XGBoost", "Random Forest", "Logistic Regression"]
@@ -1009,3 +1043,4 @@ elif st.session_state.page == "customer":
         "Educational project using historical credit card data. "
         "Predictions are not validated lending decisions."
     )
+
