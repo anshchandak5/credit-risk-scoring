@@ -1,37 +1,43 @@
 # Credit Risk Intelligence
 
-An educational Streamlit dashboard that compares three trained classification models and estimates the probability of credit-card default from an entered customer profile and six months of payment history.
+I built this project to understand how machine-learning models can be used to estimate credit-card default risk. It is an educational Streamlit dashboard where you can compare models, inspect sample customer profiles, and test a new customer profile yourself.
 
-## Live Demo
+## Live demo
 
-[Open the live Credit Risk Intelligence dashboard](https://credit-risk-scoring-gikgxwbp7edsnyxvp7yq9w.streamlit.app/)
+[Open the app here](https://credit-risk-scoring-gikgxwbp7edsnyxvp7yq9w.streamlit.app/)
+
+## What the project does
+
+- Compares XGBoost, Random Forest, and Logistic Regression models.
+- Shows accuracy, recall, ROC-AUC, F1 score, and other evaluation metrics.
+- Lets you select from the included customer records and view a prediction.
+- Lets you enter a new customer profile and generate a risk estimate.
+- Shows the main factors behind an XGBoost prediction.
+- Includes a simple expected-credit-loss calculator for learning purposes.
 
 ## Dataset
 
-This project includes the [UCI Default of Credit Card Clients dataset](https://archive.ics.uci.edu/dataset/350/defaultofcreditcardclients), a public, anonymized research dataset of 30,000 historical credit-card client records. The included SQLite database powers the Existing Customer view; the original UCI spreadsheet is retained for reproducibility.
+I used the [UCI Default of Credit Card Clients dataset](https://archive.ics.uci.edu/dataset/350/defaultofcreditcardclients). It contains anonymized historical credit-card records from 30,000 clients and is included here for reproducibility and demonstration.
 
-## Public demo safeguards
+## Tools used
 
-- The included records are from the public UCI research dataset, not this project's own customers.
-- The dashboard is an educational demonstration and is not a lending or production credit-decision system.
-- Included model artifacts support the dashboard's XGBoost, Random Forest, and Logistic Regression choices. `reports/model_evaluation.pkl` supplies the displayed evaluation metrics and feature order.
-- This demonstration is not financial advice, a production credit-decision system, or a validated lending model.
+- Python
+- Streamlit
+- Pandas and NumPy
+- Scikit-learn
+- XGBoost
+- SHAP
+- Matplotlib
+- SQLite
 
-## Run locally
+## Run it locally
 
 ```bash
 python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Deploy on Streamlit Community Cloud
+## Note
 
-1. Push this folder to a GitHub repository.
-2. In Streamlit Community Cloud, create an app from that repository.
-3. Select the branch containing this project, set the entry point to `app.py`, and choose Python 3.11 in Advanced settings.
-4. Deploy and use the generated `streamlit.app` URL.
-
-## Files intentionally excluded
-
-The `.gitignore` prevents publication of virtual environments, environment files, and Streamlit secrets.
+This is a portfolio and learning project. The predictions, risk categories, and loss calculations are illustrative only and should not be used for real lending decisions.
 
