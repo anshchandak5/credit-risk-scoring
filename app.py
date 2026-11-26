@@ -5,6 +5,7 @@ import re
 import sqlite3
 import joblib
 import shap
+import xgboost as xgb
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -261,7 +262,13 @@ def shap_for_customer(model, customer_row):
     background = preprocessor.transform(background_raw)
     background = as_float_array(background)
 
-    if hasattr(classifier, "feature_importances_"):
+    if hasattr(classifier, "get_booster"):
+        contributions = classifier.get_booster().predict(
+            xgb.DMatrix(transformed_row),
+            pred_contribs=True
+        )
+        raw = np.asarray(contributions)[:, :-1]
+    elif hasattr(classifier, "feature_importances_"):
         explainer = shap.TreeExplainer(classifier)
         raw = explainer.shap_values(transformed_row)
     elif hasattr(classifier, "coef_"):
