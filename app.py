@@ -219,11 +219,39 @@ def shap_for_customer(model, customer_row):
     """Return SHAP contributions aggregated to original input columns."""
     preprocessor = model.named_steps["preprocessor"]
     classifier = model.named_steps["classifier"]
+    number_pattern = re.compile(
+        r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+    )
+
+    def safe_float(item):
+        if isinstance(item, (list, tuple, np.ndarray)):
+            flat = np.asarray(item, dtype=object).reshape(-1)
+            parsed = [safe_float(part) for part in flat]
+            if not parsed:
+                raise ValueError("SHAP returned an empty contribution.")
+            return float(np.mean(parsed))
+
+        if isinstance(item, (int, float, np.number)):
+            return float(item)
+
+        matches = number_pattern.findall(str(item).strip())
+        if not matches:
+            raise ValueError(
+                f"SHAP returned a non-numeric contribution: {item!r}"
+            )
+        return float(np.mean([float(match) for match in matches]))
+
+    def as_float_array(value):
+        if hasattr(value, "toarray"):
+            value = value.toarray()
+        object_values = np.asarray(value, dtype=object)
+        return np.asarray(
+            [safe_float(item) for item in object_values.reshape(-1)],
+            dtype=float
+        ).reshape(object_values.shape)
 
     transformed_row = preprocessor.transform(customer_row)
-    if hasattr(transformed_row, "toarray"):
-        transformed_row = transformed_row.toarray()
-    transformed_row = np.asarray(transformed_row, dtype=float)
+    transformed_row = as_float_array(transformed_row)
 
     names = list(preprocessor.get_feature_names_out())
 
@@ -231,9 +259,7 @@ def shap_for_customer(model, customer_row):
         n=min(80, len(df)), random_state=42
     )
     background = preprocessor.transform(background_raw)
-    if hasattr(background, "toarray"):
-        background = background.toarray()
-    background = np.asarray(background, dtype=float)
+    background = as_float_array(background)
 
     if hasattr(classifier, "feature_importances_"):
         explainer = shap.TreeExplainer(classifier)
@@ -250,7 +276,7 @@ def shap_for_customer(model, customer_row):
     if isinstance(raw, list):
         raw = raw[1] if len(raw) > 1 else raw[0]
 
-    values = np.asarray(raw)
+    values = as_float_array(raw)
 
     # Some SHAP / XGBoost version combinations return object arrays
     # containing strings such as "['2.2120833E-1']". Convert each
