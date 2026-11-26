@@ -2,6 +2,10 @@
 
 An educational Streamlit dashboard that compares three trained classification models and estimates the probability of credit-card default from an entered customer profile and six months of payment history.
 
+## Live Demo
+
+[Open the live Credit Risk Intelligence dashboard](https://credit-risk-scoring-gikgxwbp7edsnyxvp7yq9w.streamlit.app/)
+
 ## Public demo safeguards
 
 - The original Excel dataset and SQLite customer database are deliberately excluded.
